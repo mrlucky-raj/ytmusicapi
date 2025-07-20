@@ -48,6 +48,10 @@ app.add_middleware(
 ytm = YTMusic()
 audio_cache: TTLCache = TTLCache(maxsize=1_000, ttl=int(os.getenv("AUDIO_TTL", 300)))
 
+@app.get("/")
+def root():
+    return {"message": "Hey Lucky, your API is working!!"}
+
 # -------------------------------------------------
 # Health & favicon
 # -------------------------------------------------
