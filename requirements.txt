@@ -1,6 +1,6 @@
 fastapi==0.110.2
 uvicorn[standard]==0.29.0
 ytmusicapi==1.7.3
-pytubefix==6.9.0
+pytubefix
 cachetools==5.3.3
 httpx==0.27.0
