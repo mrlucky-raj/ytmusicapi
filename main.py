@@ -138,9 +138,35 @@ async def search_tracks(
 # -------------------------------------------------
 # Audio URL extractor (cached + timeout)
 # -------------------------------------------------
+# def _extract_audio_url(video_id: str) -> str:
+#     try:
+#         yt = YouTube(f"https://music.youtube.com/watch?v={video_id}")
+#         stream = (
+#             yt.streams.filter(only_audio=True, file_extension="mp4")
+#             .order_by("abr")
+#             .last()
+#         )
+#         if not stream:
+#             raise ValueError("No audio stream")
+#         return stream.url
+#     except Exception as exc:
+#         logger.warning("Audio fail for %s: %s", video_id, exc)
+#         raise exc
+
+
+import socket, urllib3
+
+# ---------- PROXY / IPv4 fallback ----------
 def _extract_audio_url(video_id: str) -> str:
+    # 1. force IPv4
+    urllib3.util.connection.allowed_gai_family = lambda: socket.AF_INET
+    # 2. optional proxy (set env vars HTTP_PROXY / HTTPS_PROXY)
     try:
-        yt = YouTube(f"https://music.youtube.com/watch?v={video_id}")
+        yt = YouTube(
+            f"https://music.youtube.com/watch?v={video_id}",
+            use_oauth=False,               # skip login cookies
+            allow_oauth_cache=False,
+        )
         stream = (
             yt.streams.filter(only_audio=True, file_extension="mp4")
             .order_by("abr")
@@ -149,9 +175,10 @@ def _extract_audio_url(video_id: str) -> str:
         if not stream:
             raise ValueError("No audio stream")
         return stream.url
-    except Exception as exc:
-        logger.warning("Audio fail for %s: %s", video_id, exc)
-        raise exc
+    except Exception as e:
+        logger.error("Audio extraction failed %s", e)
+        raise e
+
 
 @app.get("/track/{video_id}")
 async def track_details(
