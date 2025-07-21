@@ -154,30 +154,56 @@ async def search_tracks(
 #         raise exc
 
 
-import socket, urllib3
 
-# ---------- PROXY / IPv4 fallback ----------
+# main.py  (only change _extract_audio_url)
+
 def _extract_audio_url(video_id: str) -> str:
-    # 1. force IPv4
-    urllib3.util.connection.allowed_gai_family = lambda: socket.AF_INET
-    # 2. optional proxy (set env vars HTTP_PROXY / HTTPS_PROXY)
     try:
         yt = YouTube(
             f"https://music.youtube.com/watch?v={video_id}",
-            use_oauth=False,               # skip login cookies
-            allow_oauth_cache=False,
+            client="WEB",          # triggers PoToken generation
+            use_po_token=True,     # tell pytubefix to run Node
         )
         stream = (
-            yt.streams.filter(only_audio=True, file_extension="mp4")
-            .order_by("abr")
-            .last()
+            yt.streams
+              .filter(only_audio=True, file_extension="mp4")
+              .order_by("abr")
+              .last()
         )
         if not stream:
             raise ValueError("No audio stream")
         return stream.url
     except Exception as e:
-        logger.error("Audio extraction failed %s", e)
+        logger.warning("PoToken extraction failed: %s", e)
         raise e
+
+
+
+
+# import socket, urllib3
+
+# # ---------- PROXY / IPv4 fallback ----------
+# def _extract_audio_url(video_id: str) -> str:
+#     # 1. force IPv4
+#     urllib3.util.connection.allowed_gai_family = lambda: socket.AF_INET
+#     # 2. optional proxy (set env vars HTTP_PROXY / HTTPS_PROXY)
+#     try:
+#         yt = YouTube(
+#             f"https://music.youtube.com/watch?v={video_id}",
+#             use_oauth=False,               # skip login cookies
+#             allow_oauth_cache=False,
+#         )
+#         stream = (
+#             yt.streams.filter(only_audio=True, file_extension="mp4")
+#             .order_by("abr")
+#             .last()
+#         )
+#         if not stream:
+#             raise ValueError("No audio stream")
+#         return stream.url
+#     except Exception as e:
+#         logger.error("Audio extraction failed %s", e)
+#         raise e
 
 
 @app.get("/track/{video_id}")
